@@ -98,12 +98,6 @@ namespace shm_queue {
                         break;
                     }
 
-                    if (msg_queue_data.message_type_ == MESSAGE_EXIT)
-                    {
-                        //如果是退出消息，则退出当前监听
-                        break;
-                    }
-
                     //处理接收的数据
                     fn_logic(msg_queue_data.text, msg_queue_data.len);
                 }
@@ -115,12 +109,7 @@ namespace shm_queue {
             if (recv_thread_is_run_)
             {
                 //需要关闭对应的消息接收线程
-                Msg_queue_buffer msg_queue_data;
-
-                size_t message_size = MAX_MESSAGE_SIZE + sizeof(size_t) + sizeof(unsigned long);
-                msg_queue_data.message_type_ = MESSAGE_EXIT;
-
-                msgsnd(msg_queue_id_, (void*)&msg_queue_data, message_size, IPC_NOWAIT);
+                msgctl(msg_queue_id_, IPC_RMID, 0);
                 tt_recv_.join();
             }
         }
