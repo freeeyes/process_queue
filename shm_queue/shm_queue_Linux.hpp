@@ -68,10 +68,12 @@ namespace shm_queue {
             size_t message_size = MAX_MESSAGE_SIZE + sizeof(size_t) + sizeof(unsigned long);
             if (0 != msgsnd(msg_queue_id_, (void*)&msg_queue_data, message_size, IPC_NOWAIT))
             {
+                int error_no = errno;
+
                 std::stringstream ss;
                 ss << "[" << __FILE__ << ":" << __LINE__
                     << "] set_proc_message fail [key " << queue_key_
-                    << "]send error: " << strerror(errno) << std::endl;
+                    << "]send error: (" << error_no << ")" << strerror(error_no) << std::endl;
                 error_ = ss.str();
                 return false;
             }
@@ -88,14 +90,36 @@ namespace shm_queue {
             tt_recv_ = std::thread([this, fn_logic]() {
                 Msg_queue_buffer msg_queue_data;
                 size_t message_size = MAX_MESSAGE_SIZE + sizeof(size_t) + sizeof(unsigned long);
+
+                //获得thread id
+                std::thread::id this_id = std::this_thread::get_id();
+                thread_id_ = *(unsigned long long*) & this_id;
+
                 while (1) {
                     if (msgrcv(msg_queue_id_, (void*)&msg_queue_data, message_size, 0, 0) == -1) {
                         std::stringstream ss;
                         ss << "[" << __FILE__ << ":" << __LINE__
                             << "] recv_message fail [key " << queue_key_
-                            << "]recv error: " << strerror(errno) << std::endl;
+                            << "]recv error: (" << errno << ")" << strerror(errno) << std::endl;
                         error_ = ss.str();
                         break;
+                    }
+
+                    if (MESSAGE_EXIT == msg_queue_data.message_type_)
+                    {
+                        //如果是关闭，查找这个消息是不是本线程消息
+                        if ((unsigned long long)msg_queue_data.len == thread_id_)
+                        {
+                            //线程关闭
+                            std::cout << "[recv_message]recv thread is close" << std::endl;
+                            break;
+                        }
+                        else
+                        {
+                            //不是本线程的关闭，重新放回消息队列
+                            std::cout << "[recv_message]recv thread is not local" << std::endl;
+                            msgsnd(msg_queue_id_, (void*)&msg_queue_data, message_size, IPC_NOWAIT);
+                        }
                     }
 
                     //处理接收的数据
@@ -108,8 +132,15 @@ namespace shm_queue {
         {
             if (recv_thread_is_run_)
             {
-                //需要关闭对应的消息接收线程
-                msgctl(msg_queue_id_, IPC_RMID, 0);
+                //需要关闭对应的消息接收线程(放入对应的线程ID)
+                Msg_queue_buffer msg_queue_data;
+
+                size_t message_size = MAX_MESSAGE_SIZE + sizeof(size_t) + sizeof(unsigned long);
+                msg_queue_data.len = (size_t)thread_id_;
+                msg_queue_data.message_type_ = MESSAGE_EXIT;
+
+                msgsnd(msg_queue_id_, (void*)&msg_queue_data, message_size, IPC_NOWAIT);
+
                 tt_recv_.join();
             }
         }
@@ -168,6 +199,7 @@ namespace shm_queue {
         std::string error_;
         std::thread tt_recv_;
         bool recv_thread_is_run_ = false;
+        unsigned long long thread_id_ = 0;
     };
 
 };
