@@ -51,6 +51,16 @@ namespace shm_queue {
             return shm_queue_->get_error();
         };
 
+        void set_error_function(queue_error_func error_func)
+        {
+            shm_queue_->set_error_function(error_func);
+        }
+
+        void set_close_function(queue_close_func close_func)
+        {
+            shm_queue_->set_close_function(close_func);
+        }
+
     private:
         std::shared_ptr<CShm_queue_interface> shm_queue_ = nullptr;
     };

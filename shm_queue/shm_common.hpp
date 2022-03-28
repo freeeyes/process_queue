@@ -26,6 +26,8 @@
 #endif
 
 using queue_recv_message_func = std::function<void(const char*, size_t)>;
+using queue_error_func = std::function<void(std::string)>;
+using queue_close_func = std::function<void(key_t key)>;
 
 class CShm_queue_interface
 {
@@ -36,4 +38,6 @@ public:
     virtual bool create_instance(key_t key, size_t message_size, int message_count) = 0;
     virtual void show_message_list() = 0;
     virtual std::string get_error() const = 0;
+    virtual void set_error_function(queue_error_func error_func) = 0;
+    virtual void set_close_function(queue_close_func close_func) = 0;
 };

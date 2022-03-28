@@ -102,6 +102,12 @@ namespace shm_queue {
                             << "] recv_message fail [key " << queue_key_
                             << "]recv error: (" << errno << ")" << strerror(errno) << std::endl;
                         error_ = ss.str();
+
+                        if (error_func_)
+                        {
+                            error_func_(error_);
+                        }
+
                         break;
                     }
 
@@ -125,6 +131,13 @@ namespace shm_queue {
                     //处理接收的数据
                     fn_logic(msg_queue_data.text, msg_queue_data.len);
                 }
+
+                //如果有回调事件，则回调
+                if (close_func_)
+                {
+                    close_func_(queue_key_);
+                }
+
             });
         }
 
@@ -191,6 +204,16 @@ namespace shm_queue {
             return error_;
         }
 
+        void set_error_function(queue_error_func error_func)
+        {
+            error_func_ = error_func;
+        }
+
+        void set_close_function(queue_close_func close_func)
+        {
+            close_func_ = close_func;
+        }
+
     private:
         key_t queue_key_;
         size_t message_max_size_ = 0;
@@ -200,6 +223,8 @@ namespace shm_queue {
         std::thread tt_recv_;
         bool recv_thread_is_run_ = false;
         unsigned long long thread_id_ = 0;
+        queue_error_func error_func_ = nullptr;
+        queue_close_func close_func_ = nullptr;
     };
 
 };

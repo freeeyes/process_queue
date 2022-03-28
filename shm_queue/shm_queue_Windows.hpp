@@ -101,6 +101,11 @@ namespace shm_queue {
                     ss << "[" << __FILE__ << ":" << __LINE__
                         << "] recv_message failed error:" << GetLastError();
                     error_ = ss.str();
+
+                    if (error_func_)
+                    {
+                        error_func_(error_);
+                    }
                 }
 
                 while (true)
@@ -132,6 +137,12 @@ namespace shm_queue {
 
                 //接收数据结束线程
                 ::CloseHandle(recv_event);
+
+                //如果有回调事件，则回调
+                if (close_func_)
+                {
+                    close_func_(shm_key_);
+                }
                 });
         }
 
@@ -147,6 +158,8 @@ namespace shm_queue {
 
                 ::SetEvent(send_event);
                 ::CloseHandle(send_event);
+
+                tt_recv_.join();
             }
         }
 
@@ -262,12 +275,12 @@ namespace shm_queue {
                     return nullptr;
                 }
 
-                std::cout << "[create_share_memory]Shm_memory_state::SHM_INIT" << std::endl;
+                //std::cout << "[create_share_memory]Shm_memory_state::SHM_INIT" << std::endl;
             }
             else
             {
                 shm_memory_state_ = Shm_memory_state::SHM_RESUME;
-                std::cout << "[create_share_memory]Shm_memory_state::SHM_RESUME" << std::endl;
+                //std::cout << "[create_share_memory]Shm_memory_state::SHM_RESUME" << std::endl;
             }
 
             // 打开成功，映射对象的一个视图，得到指向共享内存的指针，显示出里面的数据
@@ -282,12 +295,24 @@ namespace shm_queue {
             //获取或者创建当前共享内存一个进程间的互斥量
             //如果process_mutext不存在则创建，有则直接读取
             process_mutext_ = CreateMutex(NULL, false, _T("process_mutext"));
-            queue_size_        = shm_size;
+            queue_size_     = shm_size;
+            shm_key_        = shm_key;
             return shm_ptr_;
+        }
+
+        void set_error_function(queue_error_func error_func)
+        {
+            error_func_ = error_func;
+        }
+
+        void set_close_function(queue_close_func close_func)
+        {
+            close_func_ = close_func;
         }
 
         std::string error_;
         Shm_memory_state shm_memory_state_ = Shm_memory_state::SHM_INIT;
+        key_t shm_key_ = 0;
         Shm_id shm_id_;
         char* shm_ptr_ = nullptr;
         size_t queue_size_ = 0;
@@ -299,6 +324,8 @@ namespace shm_queue {
         HANDLE process_mutext_;
         bool recv_thread_is_run_ = false;
         bool recv_thread_is_close_ = false;
+        queue_error_func error_func_ = nullptr;
+        queue_close_func close_func_ = nullptr;
     };
 }
 

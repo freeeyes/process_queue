@@ -21,6 +21,10 @@ int main()
         std::cout << "share memory success" << std::endl;
     }
 
+    message_queue->set_close_function([](key_t key_id) {
+        std::cout << "[queue close]" << key_id << std::endl;
+        });
+
     message_queue->show_message_list();
 
     char buffer[10] = { '\0' };
@@ -44,4 +48,6 @@ int main()
     std::cout << "close is ok" << std::endl;
 
     getchar();
+
+    return 0;
 }
