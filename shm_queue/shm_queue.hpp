@@ -31,7 +31,7 @@ namespace shm_queue {
         {
             shm_queue_->close();
         };
-        bool create_instance(key_t key, size_t message_size, int message_count)
+        bool create_instance(shm_key key, size_t message_size, int message_count)
         {
 #if PSS_PLATFORM == PLATFORM_WIN
             shm_queue_ = std::make_shared<CMessage_Queue_Windows>();

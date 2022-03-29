@@ -21,23 +21,27 @@
 #  define PSS_PLATFORM PLATFORM_UNIX
 #endif
 
+namespace shm_queue {
 #if PSS_PLATFORM == PLATFORM_WIN
-#define key_t unsigned int
+    using shm_key = unsigned int;
+#else
+    using shm_key = key_t;
 #endif
 
-using queue_recv_message_func = std::function<void(const char*, size_t)>;
-using queue_error_func = std::function<void(std::string)>;
-using queue_close_func = std::function<void(key_t key)>;
+    using queue_recv_message_func = std::function<void(const char*, size_t)>;
+    using queue_error_func = std::function<void(std::string)>;
+    using queue_close_func = std::function<void(shm_key key)>;
 
-class CShm_queue_interface
-{
-public:
-    virtual bool set_proc_message(const char* message_text, size_t len) = 0;
-    virtual void recv_message(queue_recv_message_func fn_logic) = 0;
-    virtual void close() = 0;
-    virtual bool create_instance(key_t key, size_t message_size, int message_count) = 0;
-    virtual void show_message_list() = 0;
-    virtual std::string get_error() const = 0;
-    virtual void set_error_function(queue_error_func error_func) = 0;
-    virtual void set_close_function(queue_close_func close_func) = 0;
+    class CShm_queue_interface
+    {
+    public:
+        virtual bool set_proc_message(const char* message_text, size_t len) = 0;
+        virtual void recv_message(queue_recv_message_func fn_logic) = 0;
+        virtual void close() = 0;
+        virtual bool create_instance(shm_key key, size_t message_size, int message_count) = 0;
+        virtual void show_message_list() = 0;
+        virtual std::string get_error() const = 0;
+        virtual void set_error_function(queue_error_func error_func) = 0;
+        virtual void set_close_function(queue_close_func close_func) = 0;
+    };
 };

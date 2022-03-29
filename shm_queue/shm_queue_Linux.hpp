@@ -51,7 +51,7 @@ namespace shm_queue {
             }
 
             //如果队列超过了指定的数量，就不在插入
-            if ((msgctl(msg_queue_id_, IPC_STAT, &msq_id_ds_buf) >= 0) && (msq_id_ds_buf.msg_qnum > message_count_))
+            if ((msgctl(msg_queue_id_, IPC_STAT, &msq_id_ds_buf) >= 0) && ((int)msq_id_ds_buf.msg_qnum > message_count_))
             {
                 std::stringstream ss;
                 ss << "[" << __FILE__ << ":" << __LINE__
@@ -93,7 +93,9 @@ namespace shm_queue {
 
                 //获得thread id
                 std::thread::id this_id = std::this_thread::get_id();
-                thread_id_ = *(unsigned long long*) & this_id;
+                std::stringstream sa;
+                sa << this_id;
+                thread_id_ = std::atoll(sa.str().c_str());
 
                 while (1) {
                     if (msgrcv(msg_queue_id_, (void*)&msg_queue_data, message_size, 0, 0) == -1) {
@@ -138,7 +140,7 @@ namespace shm_queue {
                     close_func_(queue_key_);
                 }
 
-            });
+                });
         }
 
         void close() final
@@ -158,11 +160,11 @@ namespace shm_queue {
             }
         }
 
-        bool create_instance(key_t key, size_t message_size, int message_count) final
+        bool create_instance(shm_key key, size_t message_size, int message_count) final
         {
-            queue_key_        = key;
+            queue_key_ = key;
             message_max_size_ = message_size;
-            message_count_    = message_count;
+            message_count_ = message_count;
 
             if (message_size > MAX_MESSAGE_SIZE)
             {
@@ -215,10 +217,10 @@ namespace shm_queue {
         }
 
     private:
-        key_t queue_key_;
+        shm_key queue_key_;
         size_t message_max_size_ = 0;
-        int message_count_       = 0;
-        int msg_queue_id_        = 0;
+        int message_count_ = 0;
+        int msg_queue_id_ = 0;
         std::string error_;
         std::thread tt_recv_;
         bool recv_thread_is_run_ = false;

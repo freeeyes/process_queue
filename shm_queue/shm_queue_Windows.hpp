@@ -164,7 +164,7 @@ namespace shm_queue {
         }
 
         //创建一个消息队列实例
-        bool create_instance(key_t key, size_t message_size, int message_count) final
+        bool create_instance(shm_key key, size_t message_size, int message_count) final
         {
             auto queue_size = (sizeof(CShm_head) + message_size)* message_count;
             message_size_ = message_size;
@@ -233,7 +233,7 @@ namespace shm_queue {
             ::CloseHandle(shm_id_);
         }
 
-        char* create_share_memory(key_t shm_key, size_t shm_size)
+        char* create_share_memory(shm_key shm_key, size_t shm_size)
         {
             if (shm_key < 0) {
                 std::stringstream ss;
@@ -312,7 +312,7 @@ namespace shm_queue {
 
         std::string error_;
         Shm_memory_state shm_memory_state_ = Shm_memory_state::SHM_INIT;
-        key_t shm_key_ = 0;
+        shm_key shm_key_ = 0;
         Shm_id shm_id_;
         char* shm_ptr_ = nullptr;
         size_t queue_size_ = 0;

@@ -21,7 +21,7 @@ int main()
         std::cout << "share memory success" << std::endl;
     }
 
-    message_queue->set_close_function([](key_t key_id) {
+    message_queue->set_close_function([](shm_queue::shm_key key_id) {
         std::cout << "[queue close]" << key_id << std::endl;
         });
 
